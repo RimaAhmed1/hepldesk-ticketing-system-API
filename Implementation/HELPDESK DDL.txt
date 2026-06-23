@@ -1,0 +1,111 @@
+HELPDESK Commands : 
+(DDL)
+# Users:
+CREATE TABLE users (
+    user_id BIGSERIAL PRIMARY KEY,
+    fname VARCHAR(100) NOT NULL,
+    lname VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    department VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+----
+# Agents:
+CREATE TABLE agents(
+    agent_id BIGSERIAL PRIMARY KEY,
+    fname VARCHAR(100) NOT NULL,
+    lname VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    specialization VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+----
+# SLA_RULE:
+CREATE TABLE sla_rule (
+    slarule_id BIGSERIAL PRIMARY KEY,
+    priority VARCHAR(20) UNIQUE NOT NULL,
+    target_hours INTEGER NOT NULL,
+
+    CONSTRAINT chk_priority
+    CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL'))
+);
+---
+# Ticket:
+CREATE TABLE tickets (
+    ticket_id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL,
+    priority VARCHAR(20) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'OPEN',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resolved_at TIMESTAMP NULL,
+    closed_at TIMESTAMP NULL,
+    raised_by_user_id BIGINT NOT NULL,
+    assigned_agent_id BIGINT,
+    slarule_id BIGINT NOT NULL,
+
+    CONSTRAINT fk_ticket_user
+        FOREIGN KEY (raised_by_user_id)
+        REFERENCES users(user_id),
+
+    CONSTRAINT fk_ticket_agent
+        FOREIGN KEY (assigned_agent_id)
+        REFERENCES agents(agent_id),
+
+    CONSTRAINT fk_ticket_slarule
+        FOREIGN KEY (slarule_id)
+        REFERENCES sla_rule(slarule_id),
+
+    CONSTRAINT chk_ticket_priority
+        CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
+
+    CONSTRAINT chk_ticket_status
+        CHECK (status IN ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'REOPENED'))
+);
+---
+# comments:
+CREATE TABLE comments (
+    comment_id BIGSERIAL PRIMARY KEY,
+    body VARCHAR(500) NOT NULL,
+    author_type VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ticket_id BIGINT NOT NULL,
+
+    CONSTRAINT fk_comments_ticket
+        FOREIGN KEY (ticket_id)
+        REFERENCES tickets(ticket_id),
+
+    CONSTRAINT chk_author_type
+        CHECK (author_type IN ('USER', 'AGENT'))
+);
+---
+# ticket_status_log:
+CREATE TABLE ticket_status_log (
+    log_id BIGSERIAL PRIMARY KEY,
+    from_status VARCHAR(30),
+    to_status VARCHAR(30) NOT NULL,
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ticket_id BIGINT NOT NULL,
+
+    CONSTRAINT fk_history_ticket
+        FOREIGN KEY (ticket_id)
+        REFERENCES tickets(ticket_id),
+
+    CONSTRAINT chk_from_status
+        CHECK (
+            from_status IS NULL OR
+            from_status IN ('OPEN','IN_PROGRESS','RESOLVED','CLOSED','REOPENED')
+        ),
+
+    CONSTRAINT chk_to_status
+        CHECK (
+            to_status IN ('OPEN','IN_PROGRESS','RESOLVED','CLOSED','REOPENED')
+        )
+);
+-----
+# To checke the tables is there :
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public';
+-----
