@@ -1,0 +1,13 @@
+package com.helpdesk.ticketing;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class HelpdeskTicketingApplicationTests {
+
+	@Test
+	void contextLoads() {
+	}
+
+}
